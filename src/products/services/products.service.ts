@@ -18,23 +18,25 @@ export class ProductsService {
 
   findAll(params?: FilterProductsDto) {
     // if (params) {
-    //Dejamos un filto generico para cualquier propiedad de los productos...
+    //*Dejamos un filto generico para cualquier propiedad de los productos...
     const filters: FilterQuery<Product> = {};
     const { limit = 5, offset = 0, minPrice, maxPrice } = params;
     if (minPrice && maxPrice) {
-      //$gte(mayor o igual) $lte(menor o igual), mongo nos permite enviar un json con caracteristicas para el filtrado
+      //*$gte(mayor o igual) $lte(menor o igual), mongo nos permite enviar un json con caracteristicas para el filtrado
       filters.price = { $gte: minPrice, $lte: maxPrice };
     }
     return (
       this.productModel
-        //Si esta vacio filters, mongo sabe que no va a filtrar por ninguna propiedad
+        //*Si esta vacio filters, mongo sabe que no va a filtrar por ninguna propiedad
         .find(filters)
+        //*El populate va a resolver la referencia hacia brand para traerse el objeto por su id
+        .populate('brand')
         .skip(offset * limit)
         .limit(limit)
         .exec()
     );
     // }
-    // return this.productModel.find().exec();
+    // return this.productModel.find().populate('brand').exec();
   }
 
   // async findAll(params?: FilterProductsDto) {

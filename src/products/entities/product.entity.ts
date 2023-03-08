@@ -1,5 +1,7 @@
 import { Prop, Schema, SchemaFactory, raw } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
+
+import { Brand } from './brand.entity';
 
 @Schema({ timestamps: true })
 export class Product extends Document {
@@ -26,6 +28,9 @@ export class Product extends Document {
     }),
   )
   category: Record<string, any>;
+  //Brand puede guardar id para referenciar a brand
+  @Prop({ type: Types.ObjectId, ref: Brand.name })
+  brand: Brand | Types.ObjectId;
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);

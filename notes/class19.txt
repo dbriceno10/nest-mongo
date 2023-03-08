@@ -1,0 +1,143 @@
+RELACIONES UNO A UNO REFERENCIADAS
+
+Las relaciones uno a uno en MongoDB pueden realizarse de varias maneras. Algunas más óptimas y escalables a largo plazo que otras.
+
+Relaciones uno a uno embebidas vs. referenciadas
+Ocurre con las relaciones uno a uno embebidas que estamos repitiendo N cantidad de veces el mismo objeto en múltiples documentos. Esto, además de ocupar espacio innecesario en la base de datos, puede ocasionar problemas si tenemos la necesidad de actualizar todos esos documentos repetidos por un cambio de nombre de categoría o similar.
+
+Para resolver este problema, las relaciones uno a uno pueden realizarse de forma referencial. O sea, guarda el ID de un documento, dentro de otro. Muy similar a lo que solemos realizar en SQL guardando llaves foráneas en registros de otras tablas.
+
+Relaciones referenciadas
+Prepara tu aplicación para resolver este tipo de relación de la siguiente manera.
+
+Paso 1: adaptación de los esquemas
+Crea un esquema que hará posteriormente la colección de documentos que estarán referenciados en otros documentos.
+
+// products/brand.entity.ts
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document } from 'mongoose';
+
+@Schema()
+export class Brand extends Document {
+
+  @Prop({ required: true, unique: true })
+  name: string;
+
+  @Prop()
+  image: string;
+}
+export const BrandSchema = SchemaFactory.createForClass(Brand);
+En este ejemplo, creamos un esquema Brand. Un producto tendrá la referencia de un Brand en su interior.
+
+// products/product.entity.ts
+import { Document, Types } from 'mongoose';
+import { Brand } from './brand.entity';
+
+export class Product extends Document {
+
+  @Prop({ type: Types.ObjectId, ref: Brand.name })
+  brand: Brand | Types.ObjectId;
+}
+Prepara tu esquema principal. El documento que contendrá la relación referenciada a través de Brand | Types.ObjectId para indicarle a Mongoose qué tiene que esperar en esa propiedad.
+
+Paso 2: preparación de los DTO
+Prepara el DTO de creación de tu esquema principal, incorporando la propiedad que contendrá la referencia al otro documento.
+
+// products/products.dtos.ts
+import { IsMongoId } from 'class-validator';
+
+export class CreateProductDto {
+
+  @IsNotEmpty()
+  @IsMongoId()
+  readonly brand: string;
+}
+Paso 3: GET del documento referenciado
+Has guardado un MongoID dentro de un documento. Es momento de realizar un “JOIN” para traer la información del mismo.
+En MongoDB, los Join son denominados “Populates”, lo que hará Mongo aquí es ir a buscar el objeto a la colección a la cual pertenece.
+
+// products/products.service.ts
+export class ProductsService {
+
+  findAll() {
+    return this.productModel.find()
+      .populate('brand')
+      .exec();
+  }
+}
+De esta forma, el GET devolverá el objeto principal, además del objeto referenciado dentro.
+
+Las relaciones referenciadas son más profesionales y escalables. Solucionan muchos problemas típicos de bases de datos como la redundancia de los mismos y facilita las consultas.
+
+Contribución creada por: Kevin Fiorentino (Platzi Contributor).
+
+Código de ejemplo para relaciones uno a uno referenciadas
+🚨 Es importante que tengas ya esquemas, controladores, servicios y dtos de las entidades:
+
+Brand
+Customer
+Order
+User
+Deberías estar avanzado en ellos y ahora los vamos a usar para empezar a hacer relaciones, pero no te preocupes puedes encontrar estos afectados en la rama 13 y compararlo con lo que tú llevas.
+
+// src/products/entities/brand.entity.ts
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document } from 'mongoose';
+
+@Schema()
+export class Brand extends Document {
+  @Prop({ required: true, unique: true }) // 👈 is unique
+  name: string;
+
+  @Prop()
+  image: string;
+}
+
+export const BrandSchema = SchemaFactory.createForClass(Brand);
+// src/products/entities/product.entity.ts
+
+import { Document, Types } from 'mongoose';
+import { Brand } from './brand.entity';
+
+export class Product extends Document {
+
+  @Prop({ type: Types.ObjectId, ref: Brand.name }) // 👈 relation
+  brand: Brand | Types.ObjectId; // 👈 new field
+
+}
+// src/products/dtos/products.dtos.ts
+
+import {
+  ...,
+  IsMongoId, // 👈 new decorator
+} from 'class-validator';
+
+export class CreateProductDto {
+  ...
+
+  @IsNotEmpty()
+  @IsMongoId()
+  readonly brand: string; // 👈 new field
+}
+// src/products/services/products.service.ts
+
+export class ProductsService {
+
+  findAll(params?: FilterProductsDto) {
+    if (params) {
+      const filters: FilterQuery<Product> = {};
+      const { limit, offset } = params;
+      const { minPrice, maxPrice } = params;
+      if (minPrice && maxPrice) {
+        filters.price = { $gte: minPrice, $lte: maxPrice };
+      }
+      return this.productModel
+        .find(filters)
+        .populate('brand') // 👈 relation
+        .skip(offset)
+        .limit(limit)
+        .exec();
+    }
+    return this.productModel.find().populate('brand').exec(); // 👈 relation
+  }
+}

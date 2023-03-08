@@ -8,6 +8,7 @@ import {
   Min,
   ValidateIf,
   ValidateNested,
+  IsMongoId,
 } from 'class-validator';
 import { PartialType, ApiProperty } from '@nestjs/swagger';
 
@@ -47,7 +48,11 @@ export class CreateProductDto {
   @IsNotEmpty()
   @ValidateNested()
   @ApiProperty()
-  readonly category: CreateCategoryDto;
+  readonly category: CreateCategoryDto; //Categoria enbebida, guardamos un documento dentro de en esta propiedad...
+
+  @IsNotEmpty()
+  @IsMongoId()
+  readonly brand: string;
 }
 
 export class UpdateProductDto extends PartialType(CreateProductDto) {}

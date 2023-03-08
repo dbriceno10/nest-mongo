@@ -3,7 +3,7 @@ import { Document, Types } from 'mongoose';
 
 import { Customer } from './customer.entity';
 
-@Schema()
+@Schema({ timestamps: true })
 export class Order extends Document {
   @Prop({ type: Date })
   date: Date;
