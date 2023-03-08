@@ -1,0 +1,98 @@
+Trabajar con variables de entorno será siempre la forma más correcta y segura de pasarle a nuestra aplicación los datos sensibles de conexión a bases de datos o claves secretas.
+
+Pasaje de variables de entorno en NestJS
+Veamos cómo se realiza la configuración de variables de entorno en NestJS.
+
+Paso 1: instalación de NestJS Config
+Asegúrate de instalar la dependencia npm i --save @nestjs/config. Esta te permitirá crear en la raíz de tu proyecto el archivo .env, que contendrá las variables de entorno que tu aplicación necesita.
+
+# .env
+MONGO_BBDD=nestjs_mongo
+MONGO_CONF=mongodb
+MONGO_HOST=localhost:27017
+MONGO_PASS=secret
+MONGO_USER=mongo
+Revisa el módulo de configuración para programación modular.
+
+Paso 2: importación de las variables de entorno
+Importa el ConfigModule en el módulo principal de tu aplicación para leer correctamente el archivo .env.
+
+// app.module.ts
+import { ConfigModule } from '@nestjs/config';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot(),
+  ]
+})
+export class AppModule {}
+Paso 3: utilización de las variables de entorno
+De esta manera, ya tienes disponible en tu aplicación para utilizar las variables de entorno que hayas definido en el archivo .env a través del objeto global de NodeJS process de la siguiente manera:
+
+Tu cadena de conexión de MongoDB:
+
+mongodb://mongo:secret@localhost:27017/nestjs_mongo
+Podría quedar de la siguiente manera:
+
+`${process.env.MONGO_CONF}://${process.env.MONGO_USER}:${process.env.MONGO_PASS}@${process.env.MONGO_HOST}/${process.env.MONGO_BBDD}`,
+Recuerda no versionar en el repositorio de tu proyecto el archivo .env que contiene datos sensibles como contraseñas o accesos privados. Tu aplicación está lista para conectarse a múltiples ambientes de desarrollo a través de variables de ambiente.
+
+Contribución creada por: Kevin Fiorentino.
+
+Código de ejemplo para variables de ambiente en Mongo
+// .env, .stag.env, .prod.env
+MONGO_INITDB_ROOT_USERNAME=root
+MONGO_INITDB_ROOT_PASSWORD=root
+MONGO_DB=platzi-store
+MONGO_PORT=27017
+MONGO_HOST=localhost
+MONGO_CONNECTION=mongodb
+// src/config.ts
+import { registerAs } from '@nestjs/config';
+
+export default registerAs('config', () => {
+  return {
+    ...
+    mongo: { // 👈
+      dbName: process.env.MONGO_DB,
+      user: process.env.MONGO_INITDB_ROOT_USERNAME,
+      password: process.env.MONGO_INITDB_ROOT_PASSWORD,
+      port: parseInt(process.env.MONGO_PORT, 10),
+      host: process.env.MONGO_HOST,
+      connection: process.env.MONGO_CONNECTION,
+    },
+  };
+});
+// src/database/database.module.ts
+import { ConfigType } from '@nestjs/config';
+
+import config from '../config'; // 👈 import config
+
+
+@Global()
+@Module({
+  providers: [
+    ...
+    {
+      provide: 'MONGO',
+      useFactory: async (configService: ConfigType<typeof config>) => {
+        const {
+          connection,
+          user,
+          password,
+          host,
+          port,
+          dbName,
+        } = configService.mongo; // 👈 get mongo config
+        const uri = `${connection}://${user}:${password}@${host}:${port}/?authSource=admin&readPreference=primary`;
+        const client = new MongoClient(uri);
+        await client.connect();
+        const database = client.db(dbName);
+        return database;
+      },
+      inject: [config.KEY], // 👈 Inject config
+    },
+  ],
+  exports: ['API_KEY', 'MONGO'],
+})
+export class DatabaseModule {}
