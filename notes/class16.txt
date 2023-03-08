@@ -1,0 +1,93 @@
+AGREGANDO UN FILTRO PARA RANGO DE PRECIOS
+
+Los endpoints del tipo GET, además de paginar la información, pueden tener otro tipo de filtros más específicos para una regla de negocio. MongoDB permite crear cualquier tipo de filtro que necesite tu servicio.
+
+Filtro de rango numérico
+Crear un filtro entre dos números X e Y que podrían ser años o precios de productos es un caso de uso bastante habitual en la consulta de datos.
+
+Paso 1: tipado de datos
+Comienza creando el DTO para que el constructor reciba estos datos.
+
+// products/products.dto.ts
+import { ValidateIf } from 'class-validator';
+
+export class FilterProductsDto {
+
+  @IsOptional()
+  @Min(0)
+  minPrice: number;
+
+  @ValidateIf((params) => params.minPrice)
+  @IsPositive()
+  maxPrice: number;
+}
+Utilizamos el decorador @ValidateIf() para validar el precio máximo solo si existe el mínimo y también es válido.
+
+Paso 2: preparar el servicio para el filtro
+Preparar el servicio para recibir estos nuevos datos y filtrar por rango mínimo y máximos un determinado campo del esquema.
+
+// products/products.service.ts
+import { Model, FilterQuery } from 'mongoose';
+
+@Injectable()
+export class ProductsService {
+
+  findAll(params?: FilterProductsDto) {
+    if (params) {
+      const filters: FilterQuery<Product> = {};
+      const { minPrice, maxPrice } = params;
+      if (minPrice && maxPrice) {
+        filters.price = { $gte: minPrice, $lte: maxPrice };
+      }
+      return this.productModel.find(filters).exec();
+    }
+    return this.productModel.find().exec();
+  }
+}
+Para crear el filtro de rangos máximos y mínimos, MongoDB utiliza operadores de comparaciones especiales:
+
+$gte equivalente a >=
+$lte equivalente a <=
+De esta manera, el servicio está preparado para realizar un filtro numérico si el usuario ingresa el rango. Recuerda que este tipo de filtros suelen ser opcionales, el endpoint debe seguir funcionando correctamente en el caso de que no se ingrese un filtro.
+
+Contribución creada por: Kevin Fiorentino (Platzi Contributor).
+
+Código de ejemplo para filtro de rango de precios
+// src/products/dtos/products.dtos.ts
+
+import {
+  ...,
+  ValidateIf // 👈 new decorator
+} from 'class-validator';
+
+export class FilterProductsDto {
+  ...
+  @IsOptional()
+  @Min(0)
+  minPrice: number; // 👈 new field
+
+  @ValidateIf((params) => params.minPrice)
+  @IsPositive()
+  maxPrice: number;  // 👈 new field
+}
+// src/products/services/products.service.ts
+import { Model, FilterQuery } from 'mongoose';
+
+@Injectable()
+export class ProductsService {
+  ...
+
+  findAll(params?: FilterProductsDto) {
+    if (params) {
+      const filters: FilterQuery<Product> = {}; // 👈 create filters
+      const { limit, offset } = params;
+      const { minPrice, maxPrice } = params; // 👈
+      if (minPrice && maxPrice) {
+        filters.price = { $gte: minPrice, $lte: maxPrice };
+      }
+      return this.productModel.find(filters).skip(offset).limit(limit).exec();
+    }
+    return this.productModel.find().exec();
+  }
+  ..
+}
