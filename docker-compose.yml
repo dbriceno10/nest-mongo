@@ -4,9 +4,8 @@ services:
   mongo:
     image: mongo:4.4
     environment:
-      MONGO_INITDB_DATABASE: platzi_store
-      MONGO_INITDB_ROOT_USERNAME:
-      MONGO_INITDB_ROOT_PASSWORD:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
     ports:
       - 27017:27017
     volumes:
