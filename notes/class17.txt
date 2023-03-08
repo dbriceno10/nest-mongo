@@ -1,0 +1,48 @@
+AGREGANDO INDEXACIONES
+
+Una base de datos puede tener incluso millones de documentos, lo que provocaría que las consultas sean lentas. Como desarrollador o desarrolladora de software, es tu responsabilidad asegurar la eficiencia de las consultas en tu aplicación.
+
+Cómo funcionan los indexadores en MongoDB
+MongoDB utiliza el concepto de “Indexador” para permitir preseleccionar campos en tus esquemas que sabes que serán utilizados para realizar consultas a través de ellos y mejorar así la eficiencia de las mismas.
+
+Crear un indexador en los esquemas de Mongoose y NestJS es muy sencillo. Basta con agregar al decorador @Prop() la propiedad { index: true } para indicar que ese campo será indexado y se realizarán consultas a través de él.
+
+// products/product.entity.ts
+export class Product extends Document {
+
+  @Prop({ type: Number, index: true })
+  price: number;
+}
+
+export const ProductSchema = SchemaFactory.createForClass(Product);
+ProductSchema.index({ price: 1, stock: -1 });    // Orden ascendente o descendente de la indexación
+Cómo crear índice UNIQUE
+Otro tipo de índice que puedes crear en una propiedad es el Unique para que un campo sea único en una colección.
+
+// products/product.entity.ts
+export class Product extends Document {
+
+  @Prop({ type: String, unique: true })
+  idProducto: string;
+}
+Así, el campo idProducto será único dentro de todos los documentos de la colección a la cual pertenece. Provocará un error si se quiere ingresar un idProducto ya existente.
+
+Recuerda elegir muy bien los índices de cada esquema. No puedes seleccionar TODOS los campos como índices, ya que si todos ellos son importantes, ninguno lo será y Mongo no priorizará las búsquedas a través de ningún campo.
+
+También considera que los índices suelen utilizarse en bases de datos con millones de documentos en una colección. Si tu colección tiene unos pocos cientos o incluso miles de documentos, tal vez no sea necesario utilizar índices.
+
+Contribución creada por: Kevin Fiorentino (Platzi Contributor).
+
+Código de ejemplo para agregar indexadores
+// src/products/entities/product.entity.ts
+...
+export class Product extends Document {
+  ...
+
+  @Prop({ type: Number, index: true }) // 👈
+  price: number;
+
+}
+
+export const ProductSchema = SchemaFactory.createForClass(Product);
+ProductSchema.index({ price: 1, stock: -1 });  // 👈
