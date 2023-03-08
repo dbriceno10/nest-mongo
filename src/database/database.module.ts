@@ -1,5 +1,6 @@
 import { Module, Global } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose';
 import { MongoClient } from 'mongodb';
 
 import config from 'src/config';
@@ -8,6 +9,23 @@ const API_KEY_PROD = 'PROD1212121SA';
 
 @Global()
 @Module({
+  imports: [
+    // MongooseModule.forRoot(
+    //   'mongoURI',
+    // ),
+    //*Ahora vamos a lanzar mongoose de forma asincrona para pasarle variables de entorno
+    MongooseModule.forRootAsync({
+      useFactory: (configService: ConfigType<typeof config>) => {
+        const { dbName, dbUri } = configService.mongo;
+        return {
+          uri: dbUri,
+          dbName,
+        };
+      },
+      //Inyectamos dependencias
+      inject: [config.KEY],
+    }),
+  ],
   providers: [
     {
       provide: 'API_KEY',
@@ -29,6 +47,6 @@ const API_KEY_PROD = 'PROD1212121SA';
       inject: [config.KEY],
     },
   ],
-  exports: ['API_KEY', 'MONGO'],
+  exports: ['API_KEY', 'MONGO', MongooseModule],
 })
 export class DatabaseModule {}

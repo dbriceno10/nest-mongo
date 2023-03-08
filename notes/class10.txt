@@ -1,0 +1,66 @@
+Utilizar el driver oficial de MongoDB para NestJS es una buena manera de trabajar y relacionar estos dos mundos. Pero existe una forma mucho más profesional y amigable que te ayudará a trabajar más rápido y cometer menos errores.
+
+¿Qué es Mongoose como ODM?
+Mongoose es un ODM (Object Data Modeling) que permite realizar un mapeo de cada colección de tu base de datos MongoDB a través de esquemas. Estos te ayudarán a acceder a los datos, realizar consultas complejas y estandarizar la estructura de los mismos.
+
+En MongoDB, al ser NoSQL, puedes guardar lo que quieras, en el orden que quieras y con la estructura que quieras. Esto es una muy mala práctica que tienes que evitar ya que traerá serios problemas en un futuro no muy lejano en tu proyecto. Los ODM llegan para solucionar esto.
+
+Cómo instalar Mongoose
+Te dejamos esta serie de pasos para utilizar Mongoose.
+
+Paso 1: instalación de Mongoose
+Además de la instalación de Mongoose, NestJS posee su propia librería que te ayudará a crear los esquemas, inyectar los servicios y ejecutar las consultas a tu base de datos.
+
+npm install --save @nestjs/mongoose mongoose
+Paso 2: importación y configuración de Mongoose
+Importa el módulo MongooseModule y pásale la cadena de conexión utilizando, o no, variables de entorno.
+
+import { MongooseModule } from '@nestjs/mongoose';
+@Module({
+  imports: [
+    MongooseModule.forRoot( `${process.env.MONGO_CONF}://${process.env.MONGO_USER}:${process.env.MONGO_PASS}@${process.env.MONGO_HOST}/${process.env.MONGO_BBDD}`
+    )
+  ]
+})
+export class AppModule { }
+De esta manera, habrás realizado la conexión de tu base de datos a través de Mongoose, en lugar de utilizar el driver oficial.
+
+Contribución creada por: Kevin Fiorentino.
+
+Código de ejemplo para instalación de Mongoose
+npm install --save @nestjs/mongoose mongoose
+// src/database/database.module.ts
+import { MongooseModule } from '@nestjs/mongoose'; // 👈 Import
+
+@Global()
+@Module({
+  imports: [  // 👈
+    MongooseModule.forRootAsync({ // 👈 Implement Module
+      useFactory: (configService: ConfigType<typeof config>) => {
+        const {
+          connection,
+          user,
+          password,
+          host,
+          port,
+          dbName,
+        } = configService.mongo;
+        return {
+          uri: `${connection}://${host}:${port}`,
+          user,
+          pass: password,
+          dbName,
+        };
+      },
+      inject: [config.KEY],
+    }),
+  ],
+  providers: [
+    {
+      provide: 'API_KEY',
+      inject: [config.KEY],
+    },
+  ],
+  exports: ['API_KEY', 'MONGO', MongooseModule],  // 👈 add in exports
+})
+export class DatabaseModule {}
