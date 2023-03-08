@@ -1,0 +1,63 @@
+La parte más importante de conectarse a una base de datos es la obtención de las mismas para su posterior uso.
+
+Cómo realizar consultas a la base
+Teniendo establecida la conexión a la base de datos, puedes ejecutar consultas de manera muy sencilla en tus servicios.
+
+// src/app.service.ts
+import { Db } from 'mongodb';
+
+@Injectable()
+export class AppService {
+
+  constructor(@Inject('MONGO') private database: Db,) {}
+
+  getProducts() {
+    const productCollection = this.database.collection('products');
+    return productCollection.find().toArray();
+  }
+}
+Puedes utilizar estas consultas en tus controladores para la creación de endpoints.
+
+// src/app.controller.ts
+import { AppService } from './app.service';
+
+@Controller()
+export class AppController {
+
+  constructor(private readonly appService: AppService) {}
+
+  @Get('/products')
+  getProducts() {
+    return this.appService.getProducts();
+  }
+}
+Así, tienes ya disponible la creación de todo un CRUD con persistencia en base de datos MongoDB para que juegues con tu aplicación.
+
+Contribución creada por: Kevin Fiorentino.
+
+Código de ejemplo para ejecutar una query
+// src/app.service.ts
+
+...
+@Injectable()
+export class AppService {
+  ...
+
+  getTasks() { // 👈 Query
+    const tasksCollection = this.database.collection('tasks');
+    return tasksCollection.find().toArray();
+  }
+}
+// src/app.controller.ts
+import { AppService } from './app.service';
+
+@Controller()
+export class AppController {
+  constructor(private readonly appService: AppService) {}
+  ...
+
+  @Get('/tasks/') // 👈 New endpoint
+  getTasks() {
+    return this.appService.getTasks();
+  }
+}
