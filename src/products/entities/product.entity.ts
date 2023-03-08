@@ -21,4 +21,4 @@ export class Product extends Document {
 
 export const ProductSchema = SchemaFactory.createForClass(Product);
 //Indexacion compuesta, si se pregunta por mas de un campo a la vez, 1 para ordenar de forma ascendente, -1 para ordenar de forma descendente
-ProductSchema.index({ price: 1, stock: -1 });
+ProductSchema.index({ price: 1, stock: -1 }, { unique: true });

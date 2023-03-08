@@ -46,3 +46,5 @@ export class Product extends Document {
 
 export const ProductSchema = SchemaFactory.createForClass(Product);
 ProductSchema.index({ price: 1, stock: -1 });  // 👈
+
+Esto tambien es útil si se quiere generar una llave unica entre dos campos, la función recibe un parametro adicional que es un objeto de configuración así 👉
