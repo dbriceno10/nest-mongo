@@ -24,32 +24,28 @@ export class ProductsService {
     return product;
   }
 
-  // create(data: CreateProductDto) {
-  //   this.counterId = this.counterId + 1;
-  //   const newProduct = {
-  //     id: this.counterId,
-  //     ...data,
-  //   };
-  //   this.products.push(newProduct);
-  //   return newProduct;
-  // }
+  create(data: CreateProductDto) {
+    const newProduct = new this.productModel(data);
+    return newProduct.save();
+  }
 
-  // update(id: number, changes: UpdateProductDto) {
-  //   const product = this.findOne(id);
-  //   const index = this.products.findIndex((item) => item.id === id);
-  //   this.products[index] = {
-  //     ...product,
-  //     ...changes,
-  //   };
-  //   return this.products[index];
-  // }
+  update(id: string, changes: UpdateProductDto) {
+    const product = this.productModel
+      .findByIdAndUpdate(id, { $set: changes }, { new: true })
+      .exec();
+    //*la instruccion $set hace que solo se midifiquen los atributos enviados en los cambios y los une al modelo ya consuktado
+    //*la instrucccion new va a retornar el elemento actualizado
+    if (!product) {
+      throw new NotFoundException(`Product #${id} not found`);
+    }
+    return product;
+  }
 
-  // remove(id: number) {
-  //   const index = this.products.findIndex((item) => item.id === id);
-  //   if (index === -1) {
-  //     throw new NotFoundException(`Product #${id} not found`);
-  //   }
-  //   this.products.splice(index, 1);
-  //   return true;
-  // }
+  async remove(id: string) {
+    const product = await this.productModel.findByIdAndDelete(id);
+    if (!product) {
+      throw new NotFoundException(`Product #${id} not found`);
+    }
+    return product;
+  }
 }
