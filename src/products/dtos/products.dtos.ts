@@ -7,10 +7,15 @@ import {
   IsOptional,
   Min,
   ValidateIf,
+  ValidateNested,
 } from 'class-validator';
 import { PartialType, ApiProperty } from '@nestjs/swagger';
 
+import { CreateCategoryDto } from './category.dtos';
+
 //Una vez usamos el ApiProperty de swagger, nos obliga a usarlo en todas las propiedades... un error comun que el al hacer un update, te pida que mandes todo el objeto y no solo lo que quieras actualizar
+
+//ValidateNested (validar en cascada), si tenemos una clase la va a validar como parte de ella (en el dto)
 
 export class CreateProductDto {
   @IsString()
@@ -38,6 +43,11 @@ export class CreateProductDto {
   @IsNotEmpty()
   @ApiProperty()
   readonly image: string;
+
+  @IsNotEmpty()
+  @ValidateNested()
+  @ApiProperty()
+  readonly category: CreateCategoryDto;
 }
 
 export class UpdateProductDto extends PartialType(CreateProductDto) {}
