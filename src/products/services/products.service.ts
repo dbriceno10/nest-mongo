@@ -16,17 +16,33 @@ export class ProductsService {
     @InjectModel(Product.name) private productModel: Model<Product>,
   ) {}
 
-  findAll(params?: FilterProductsDto) {
-    if (params) {
-      const { limit, offset } = params;
-      return this.productModel.find().skip(offset).limit(limit).exec();
-      // return this.productModel
-      //   .find()
-      //   .skip(offset * limit)
-      //   .limit(limit)
-      //   .exec();
-    }
-    return this.productModel.find().exec();
+  // findAll(params?: FilterProductsDto) {
+  //   if (params) {
+  //     const { limit, offset } = params;
+  //     return this.productModel.find().skip(offset).limit(limit).exec();
+  //     // return this.productModel
+  //     //   .find()
+  //     //   .skip(offset * limit)
+  //     //   .limit(limit)
+  //     //   .exec();
+  //   }
+  //   return this.productModel.find().exec();
+  async findAll(params?: FilterProductsDto) {
+    const { limit = 5, offset = 0 } = params;
+    const [total, products] = await Promise.all([
+      this.productModel.countDocuments(),
+      this.productModel
+        .find()
+        .skip(offset * limit)
+        .limit(limit)
+        .exec(),
+    ]);
+    return { products, total };
+    // return this.productModel
+    //   .find()
+    //   .skip(offset * limit)
+    //   .limit(limit)
+    //   .exec();
   }
 
   async findOne(id: string) {
