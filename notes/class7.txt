@@ -1,0 +1,85 @@
+Veamos una forma de realizar la conexión a una base de datos MongoDB con el driver oficial.
+
+Estableciendo la conexión asíncrona
+Conectarse a una base de datos es un procedimiento asíncrono. Este puede ejecutarse de manera global al inicializar el proyecto NestJS y, posteriormente, gracias a las características de NestJS, inyectar la conexión en cualquier servicio para hacer consultas.
+
+Paso 1: establecer la conexión de forma global
+Creamos un módulo al que denominaremos DatabaseModule, que contiene la configuración de forma global para establecer la conexión a una base de datos, a la vez que inyecta un servicio denominado “MONGO”. Este puede ser utilizado por cualquier otro servicio que requiere la conexión.
+
+// src/database/database.module.ts
+import { MongoClient } from 'mongodb';
+
+@Global()
+@Module({
+  providers: [
+    {
+      provide: 'MONGO',
+      useFactory: async () => {
+        const uri =
+          'mongodb://mongo:secret@localhost:27017/nestjs_mongo?authSource=admin';
+        const client = new MongoClient(uri);
+        await client.connect();
+        const database = client.db('platzi-store');
+        return database;
+      },
+    },
+  ],
+  exports: ['API_KEY', 'MONGO'],
+})
+export class DatabaseModule {}
+Paso 2: inyección del servicio
+Inyectamos el servicio que lleva el nombre de “MONGO” en cualquier otro servicio que requiere su utilización.
+
+// src/app.service.ts
+import { Db } from 'mongodb';
+
+@Injectable()
+export class AppService {
+  constructor(@Inject('MONGO') private database: Db,) {}
+}
+De esta manera, solo usando el driver oficial de MongoDB, puedes crear un servicio reutilizable para establecer la conexión a tu base de datos.
+
+Contribución creada por: Kevin Fiorentino.
+
+Código de ejemplo de: conexión como inyectable
+// src/database/database.module.ts
+import { MongoClient } from 'mongodb'; // 👈 Import MongoClient
+
+@Global()
+@Module({
+  providers: [
+    ...
+    {
+      provide: 'MONGO',
+      useFactory: async () => { // 👈 Inject w/ useFactory
+        const uri =
+          'mongodb://root:root@localhost:27017/?authSource=admin&readPreference=primary';
+        const client = new MongoClient(uri);
+        await client.connect();
+        const database = client.db('platzi-store');
+        return database;
+      },
+    },
+  ],
+  exports: ['API_KEY', 'MONGO'],  // 👈 add in exports
+})
+// src/app.service.ts
+import { Injectable, Inject } from '@nestjs/common';
+import { Db } from 'mongodb'; // 👈 Import DB Type
+
+@Injectable()
+export class AppService {
+  constructor(
+    // @Inject('API_KEY') private apiKey: string,
+    @Inject('TASKS') private tasks: any[],
+    @Inject('MONGO') private database: Db,
+    @Inject(config.KEY) private configService: ConfigType<typeof config>,
+  ) {}
+
+  getHello(): string {
+    const apiKey = this.configService.apiKey;
+    const name = this.configService.database.name;
+    return `Hello World! ${apiKey} ${name}`;
+  }
+  getTasks() { }  // 👈 Create new method
+}
