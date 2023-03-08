@@ -9,6 +9,10 @@ async function bootstrap() {
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
+      transformOptions: {
+        //Habilitamos que se aplique un pipe de transformacion global, esto nos sirve cuando el param que llega es un objeto, pero cuando son parametros individuales i hay que usar el pipe para parsearlo individualmente
+        enableImplicitConversion: true,
+      },
     }),
   );
 

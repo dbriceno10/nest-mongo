@@ -1,0 +1,126 @@
+AGREGANDO PAGINACIÓN
+
+Una base de datos puede tener miles y miles de registros, los cuales conviene consultar de forma gradual y en partes para que sea más ameno para el usuario que consume la información.
+
+Cómo es la paginación en MongoDB
+Las consultas que realices en MongoDB permiten separar los resultados en partes iguales y desarrollar en el front-end la típica lógica de paginación de resultados.
+
+Paso 1: tipado de datos
+Comienza creando un DTO para el tipado de los datos que construirán la paginación.
+
+// products/products.dto.ts
+
+import { IsOptional, Min } from 'class-validator';
+export class FilterProductsDto {
+
+  @IsOptional()
+  @IsPositive()
+  limit: number;        // Cantidad de registros por página
+
+  @IsOptional()
+  @Min(0)
+  offset: number;      // Número de registros a ignorar
+}
+Paso 2: aplicar “limit” y “offset” en el servicio
+El servicio de lectura de los registros recibe los parámetros para crear el paginador y utilizarlos en la consulta.
+
+// products/products.service.ts
+import { FilterProductsDto } from './products.dtos';
+
+@Injectable()
+export class ProductsService {
+
+  findAll(params?: FilterProductsDto) {
+    if (params) {
+      const { limit, offset } = params;
+      return this.productModel.find().skip(offset).limit(limit).exec();
+    }
+    return this.productModel.find().exec();
+  }
+}
+Paso 3: endpoint paginador de registros
+El controlador será el encargado de recibir estos datos y pasárselos al servicio para devolver los datos paginados.
+
+// products/products.controller.ts
+import { FilterProductsDto } from '../dtos/products.dtos';
+
+@Controller('products')
+export class ProductsController {
+
+  @Get()
+  getProducts(@Query() params: FilterProductsDto) {
+    return this.productsService.findAll(params);
+  }
+}
+Los parámetros que construyen un paginador suelen recibirse por medio de Query Params y estos deben ser opcionales. El backend tiene que contemplar valores por defecto en el caso de que el front-end no envíe nada y el endpoint debe continuar funcionando correctamente.
+
+Paso 4: configuración de Query Params
+Por defecto, todos los Query Params son del tipo String. NestJS nos ayuda a convertirlos a números enteros con la siguiente configuración en el archivo main.ts.
+
+// src/main.ts
+new ValidationPipe({
+  transformOptions: {
+    enableImplicitConversion: true,    // Convertir Query Params a números entero
+  }
+})
+De esta manera, tu endpoint del tipo GET se encuentra listo para permitirle al front-end crear un paginador y facilitar la lectura de resultados a los usuarios.
+
+Contribución creada por: Kevin Fiorentino.
+
+Código de ejemplo para agregar paginación
+// src/products/dtos/products.dtos.ts
+
+import {
+ ...
+  IsOptional, // 👈 new decorator
+  Min,  // 👈 new decorator
+} from 'class-validator';
+
+...
+
+export class FilterProductsDto { // 👈 new DTO
+  @IsOptional()
+  @IsPositive()
+  limit: number;
+
+  @IsOptional()
+  @Min(0)
+  offset: number;
+}
+// src/products/services/products.service.ts
+
+import {
+  CreateProductDto,
+  UpdateProductDto,
+  FilterProductsDto,  // 👈 import DTO
+} from './../dtos/products.dtos';
+
+@Injectable()
+export class ProductsService {
+
+  findAll(params?: FilterProductsDto) { // 👈
+    if (params) {
+      const { limit, offset } = params;
+      return this.productModel.find().skip(offset).limit(limit).exec();  // 👈
+    }
+    return this.productModel.find().exec();
+  }
+
+}
+// src/products/controllers/products.controller.ts
+
+import { ..., FilterProductsDto } from '../dtos/products.dtos'; // 👈 import DTO
+
+@Controller('products')
+export class ProductsController {
+  ...
+
+  @Get()
+  @ApiOperation({ summary: 'List of products' })
+  getProducts(@Query() params: FilterProductsDto) { // 👈
+    return this.productsService.findAll(params);
+  }
+
+  ...
+
+}
