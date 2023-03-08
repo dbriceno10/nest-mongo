@@ -1,0 +1,166 @@
+Conectarse a una base de datos implica la posibilidad de manipular en su totalidad los datos desde su creación, modificación y eliminación, además de la lectura de los mismos.
+
+Crear documento
+La creación de un registro es bastante sencilla, basta con pasarle los datos necesarios para la creación de un nuevo documento.
+
+// modules/products/products.service.ts
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { CreateProductDto } from './product.dto';
+
+@Injectable()
+export class ProductsService {
+
+  constructor(@InjectModel(Product.name) private productModel: Model<Product>) {}
+
+  create(data: CreateProductDto) {
+    const newProduct = new this.productModel(data);
+    return newProduct.save();
+  }
+}
+Recuerda que puedes apoyarte en los DTO de NestJS para el tipado de datos. El productModel espera que le envíes un objeto que contenga las mismas propiedades que el esquema que hayas creado para la colección.
+
+Actualizar documento
+La actualización de un registro conlleva dos partes, comprobar que el mismo exista para su posterior actualización. Afortunadamente, Mongoose puede realizar las dos acciones en una.
+
+// modules/products/products.service.ts
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { UpdateProductDto } from './product.dto';
+
+@Injectable()
+export class ProductsService {
+
+  constructor(@InjectModel(Product.name) private productModel: Model<Product>) {}
+
+  update(id: string, changes: UpdateProductDto) {
+    return this.productModel
+      .findByIdAndUpdate(id, { $set: changes }, { new: true })
+      .exec();
+  }
+}
+Para la actualización de un documento, la función findByIdAndUpdate primero busca el registro por ID y si lo encuentra, lo actualiza. Aquí ya es necesario un poco de conocimiento en el lenguaje de consulta de MongoDB para utilizar el $set que actualizará los campos que se le indique.
+
+Eliminar documento
+La eliminación de un registro es similar a la actualización. El documento debe existir para su posterior eliminación. La función findByIdAndDelete lo hará por nosotros.
+
+// modules/products/products.service.ts
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+
+@Injectable()
+export class ProductsService {
+
+  constructor(@InjectModel(Product.name) private productModel: Model<Product>) {}
+
+  remove(id: string) {
+    return this.productModel.findByIdAndDelete(id);
+  }
+}
+Endpoints para crear, actualizar y eliminar
+Ya solo queda construir los endpoints necesarios para realizar cada operación en la base de datos.
+
+@Controller('products')
+export class ProductsController {
+
+  @Post()
+  create(@Body() payload: CreateProductDto) {
+    return this.productsService.create(payload);
+  }
+
+  @Put(':id')
+  update(@Param('id') id: string, @Body() payload: UpdateProductDto) {
+    return this.productsService.update(id, payload);
+  }
+
+  @Delete(':id')
+  delete(@Param('id') id: string) {
+    return this.productsService.remove(id);
+  }
+}
+De esta manera, ya puedes realizar operaciones CRUD y manipular por completo los datos de tu colección de MongoDB desde una API Rest.
+
+Contribución creada por: Kevin Fiorentino (Platzi Contributor).
+
+Código de ejemplo crear, actualizar y borrar productos
+// src/products/services/products.service.ts
+...
+
+@Injectable()
+export class ProductsService {
+  ...
+
+  create(data: CreateProductDto) {  // 👈
+    const newProduct = new this.productModel(data);
+    return newProduct.save();
+  }
+
+  update(id: string, changes: UpdateProductDto) {  // 👈
+    const product = this.productModel
+      .findByIdAndUpdate(id, { $set: changes }, { new: true })
+      .exec();
+    if (!product) {
+      throw new NotFoundException(`Product #${id} not found`);
+    }
+    return product;
+  }
+
+  remove(id: string) {  // 👈
+    return this.productModel.findByIdAndDelete(id);
+  }
+}
+// src/products/controllers/products.controller.ts
+
+@Controller('products')
+export class ProductsController {
+   ...
+
+  @Post()
+  create(@Body() payload: CreateProductDto) {
+    return this.productsService.create(payload);  // 👈
+  }
+
+  @Put(':id')
+  update(@Param('id') id: string, @Body() payload: UpdateProductDto) {
+    return this.productsService.update(id, payload);  // 👈
+  }
+
+  @Delete(':id')
+  delete(@Param('id') id: string) {
+    return this.productsService.remove(id);  // 👈
+  }
+}
+Revisa que uses el ApiProperty en todos los attrs del Dto para que se haga la actualización correctamente.
+
+// src/products/dtos/products.dtos.ts
+import { ApiProperty, PartialType } from '@nestjs/swagger';
+
+export class CreateProductDto {
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty({ description: `product's name` }) // 👈 use ApiProperty
+  readonly name: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty() // 👈 use ApiProperty
+  readonly description: string;
+
+  @IsNumber()
+  @IsNotEmpty()
+  @IsPositive()
+  @ApiProperty() // 👈 use ApiProperty
+  readonly price: number;
+
+  @IsNumber()
+  @IsNotEmpty()
+  @ApiProperty() // 👈 use ApiProperty
+  readonly stock: number;
+
+  @IsUrl()
+  @IsNotEmpty()
+  @ApiProperty() // 👈 use ApiProperty
+  readonly image: string;
+}
+
+export class UpdateProductDto extends PartialType(CreateProductDto) {}
