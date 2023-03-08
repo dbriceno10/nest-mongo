@@ -1,0 +1,72 @@
+Tu productividad como desarrollador/a de software se incrementará gracias a Docker. No importa si eres desarrollador/a, backend o front-end. Hoy en día, trabajar con Docker es vital para ser un buen profesional del software.
+
+Cuáles son los beneficios de Docker
+Con Docker podrás utilizar la tecnología que quieras en simples pasos, sin preocuparte por instalarla en tu computadora. No tendrás que “llenar” tu ordenador con programas que tal vez solo necesitas por un rato.
+
+Es así como Docker simplifica la instalación de un motor de base de datos, de un lenguaje de programación para hacer algunas pruebas o de un software en particular para un propósito dado.
+
+Cómo trabajan Docker y MongoDB
+Veamos cómo puedes emplear Docker para levantar una base de datos MongoDB.
+
+1. Configuración Docker
+Comienza creando un archivo al cual, por defecto, se lo denomina docker-compose.yml.
+
+NOTA: Los archivos de Docker utilizan la extensión .yml. Tal vez tengas que instalar una extensión en tu editor de código para visualizar estos archivos correctamente.
+
+2. Configuración MongoDB con Docker
+Agrégale el siguiente contenido al archivo que te permitirá levantar un contenedor de Docker con MongoDB en su interior.
+
+# docker-compose.yml
+version: '3'
+services:
+  my-mongo:
+    image: mongo:4.4.4
+    environment:
+      - MONGO_INITDB_DATABASE=nestjs_mongo
+      - MONGO_INITDB_ROOT_USERNAME=mongo
+      - MONGO_INITDB_ROOT_PASSWORD=secret
+    ports:
+      - '27017:27017'
+    volumes:
+      - ./mongo_data:/data/db
+Cómo leer cada línea del archivo
+Entendamos qué es cada línea de este archivo:
+
+version: la versión de Docker a utilizar.
+services: un mismo docker.compose.yml podrá tener N cantidad de contenedores Docker que se relacionan entre sí. En este ejemplo, solo tendremos un contenedor llamado my-mongo.
+image: el nombre de la imagen base a utilizar para levantar el contenedor.
+environment: variables de entorno que el contenedor necesita. La imagen de Docker usada recibe por defecto las variables MONGO_INITDB_DATABASE, MONGO_INITDB_ROOT_USERNAME y MONGO_INITDB_ROOT_PASSWORD para preconfigurar el usuario de la base de datos.
+ports: el puerto que el contenedor utilizará. <puerto_host>:<puerto_contenedor>. MongoDB usa por defecto el puerto 27017 y podremos acceder al mismo a través del puerto 27017 de la máquina local.
+volumes: Docker, al destruir un contenedor, no mantendrá los datos y se perderán. Usamos esta configuración para generar un directorio y persistir los datos en la computadora local.
+3. Ejecutar contenedor
+Es momento de levantar el contenedor con el simple comando docker-compose up -d. En pocos segundos podrás corroborar si el contenedor quedó levantado en tu computador con el comando docker ps. Debería estar ejecutándose, en el puerto 27017 una base de datos MongoDB.
+
+4. Otros comandos útiles
+Puedes detener el contenedor que está corriendo con el comando docker-compose down o actualizarlo con el comando docker-compose up -d --build en el caso de que hayas realizado modificaciones en el archivo docker-compose.yml.
+
+Docker es todo un mundo que te recomiendo aprender y Platzi tiene un Curso de Docker para enseñarte cómo funciona.
+
+Docker no es una tecnología exclusiva de DevOps, todo desarrollador de software debería saber trabajar con ella.
+
+Contribución creada por: Kevin Fiorentino.
+
+Código de ejemplo para configuración de Docker
+# docker-compose.yml
+
+version: '3.3'
+
+services:
+  mongo:
+    image: mongo:4.4
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    ports:
+      - 27017:27017
+    volumes:
+     - ./mongo_data:/data/db
+# .gitignore
+/mongo_data
+docker-compose up -d mongo
+docker-compose ps
+docker-compose down
