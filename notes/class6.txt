@@ -1,0 +1,59 @@
+Ya sabes como hacer la configuración de Docker, Ahora, para conectar NestJS y MongoDB es necesario realizar la instalación de algunas dependencias desde NPM que nos ayudarán a lograrlo.
+
+Cómo instalar drivers MongoDB
+Con el comando npm install mongodb --save instalarás el driver oficial para trabajar con NodeJS y MongoDB. Esta dependencia puedes utilizarla siempre que quieras, ya sea que estés trabajando con NestJS o no.
+
+NOTA: Adicional a la instalación del driver, al trabajar con TypeScript es necesario instalar el tipado de la dependencia con el comando npm i @types/mongodb --save-dev para que nos ayude a trabajar con el driver y evitar errores.
+
+Siempre usa dependencias oficiales cuando se trata de conexiones a bases de datos. Posterior a eso, podrás instalar otras dependencias que te ayudarán a mapear los datos, pero siempre se apoyan en el driver principal para establecer la conexión y realizar las consultas.
+
+Contribución creada por: Kevin Fiorentino.
+
+Código de ejemplo para instalación de MongoDB driver
+npm i mongodb --save
+npm i @types/mongodb --save-dev
+# src/app.module.ts
+
+import { MongoClient } from 'mongodb';
+
+const uri = 'mongodb://root:root@localhost:27017/?authSource=admin&readPreference=primary';
+
+const client = new MongoClient(uri);
+async function run() {
+  await client.connect();
+  const database = client.db('platzi-store');
+  const taskCollection = database.collection('tasks');
+  const tasks = await taskCollection.find().toArray();
+  console.log(tasks);
+}
+run();
+
+
+CORRER UN CLIENTE DE MONGO DENTRO DE Docker
+
+Se puede usar mongo-express que es un: DBMS (Data Base Management System) y correrlo en docker para no tener que instalar nada.
+
+El archivo “docker-compose.yml” quedaría así:
+
+version: '3.3'
+
+services:
+  mongo:
+    image: mongo:4
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=root
+    ports:
+      - 27017:27017
+  express:
+    image: mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: root
+      ME_CONFIG_MONGODB_URL: mongodb://root:root@mongo:27017/
+
+
+Se ejecuta en el local tal cual, abriendo el navegador en localhost:8081
