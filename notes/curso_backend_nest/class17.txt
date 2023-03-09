@@ -1,0 +1,32 @@
+INTRODUCCIÓN A PIPES: USA TU PRIMER PIPE
+
+NestJS utiliza el concepto de PIPES para la validación y transformación de los datos antes del ingreso de estos a un controlador.
+
+Casos de uso de PIPES
+Los pipes tienen dos casos de uso típicos:
+
+Transformación: transforma los datos de entrada a la forma deseada (por ejemplo, de cadena a entero).
+Validación: evalúa los datos de entrada y, si son válidos, simplemente los pasa sin cambios; de lo contrario, lanza una excepción cuando los datos son incorrectos.
+Implementando tu primer PIPE
+NestJS ya trae consigo una serie de pipes que puedes utilizar para la manipulación de datos. Impórtalos desde @nestjs/common y úsalos de la siguiente manera.
+
+import { ParseIntPipe } from '@nestjs/common';
+
+@Get('product/:idProduct')
+getProduct(@Param('idProduct', ParseIntPipe) idProduct: string): string {
+    // ...
+}
+El pipe ParseIntPipe, agrégalo como segundo parámetro del decorador Param para transformar el parámetro idProduct y asegurar que este sea un número entero.
+
+De no serlo, arrojará un error y al mismo tiempo estás protegiendo tu aplicación de datos erróneos o maliciosos.
+
+Explora todos los PIPES que NestJS ya tiene preparados para ti.
+
+// src/controllers/products.controller.ts
+import {..., ParseIntPipe} from '@nestjs/common';
+
+@Get(':id')
+get(@Param('id', ParseIntPipe) id: number) {
+  return this.productsService.findOne(id);
+}
+Contribución creada con los aportes de: Kevin Fiorentino y William Abel Condori

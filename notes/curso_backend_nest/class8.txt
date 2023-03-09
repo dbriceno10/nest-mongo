@@ -1,0 +1,72 @@
+GET: PARÁMETROS QUERY
+
+Hay varias maneras de enviar información a un endpoint del tipo GET, cada una con sus ventajas y desventajas. Profundicemos acerca de ellas.
+
+Parámetros de ruta vs Parámetros query
+Los parámetros de ruta son aquellos que forman parte del propio endpoint y suelen ser parámetros obligatorios.
+
+@Get('product/:idProduct')
+getProduct2(@Param('idProduct') idProduct: string): string {
+    return `Producto id: ${idProduct}`;
+}
+En NestJS se capturan con el decorador @Param().
+
+Por otro lado, están los parámetros de consulta o query en las URL como por ejemplo example.com/products?limit=10&offset=20 que se capturan con el decorador @Query() importado desde @nestjs/common.
+
+@Get('products')
+getProducts(@Query('limit') limit = 10, @Query('offset') offset = 0): string {
+    return `Lista de productos limit=${limit} offset=${offset}`;
+}
+Su principal diferencia es que los parámetros de consulta suelen ser opcionales; el comportamiento del endpoint tiene que contemplar que estos datos pueden no existir con un valor por defecto.
+
+Los parámetros de ruta se utilizan para IDs u otros identificadores obligatorios, mientras que los parámetros de consulta se utilizan para aplicar filtros opcionales a una consulta. Utilízalos apropiadamente en tus endpoints según tengas la necesidad.
+
+Evitando el bloqueo de rutas
+Un importante consejo a tener en cuenta para construir aplicaciones con NestJS es asegurar que un endpoint no esté bloqueando a otro.
+Por ejemplo:
+
+/* Ejemplo Bloqueo de Endpoints */
+@Get('products/:idProduct')
+endpoint1() {
+    // ...
+}
+@Get('products/filter')
+endpoint2() {
+    // ...
+}
+El endpoint1 bloquea al **endpoint2, ya que este está esperando un parámetro :idProduct y si llamamos a localhost:3000/products/filter NestJS entenderá que la palabra filter es el ID que espera el primer endpoint ocasionando que no sea posible acceder al segundo endpoint.
+
+Se soluciona de forma muy sencilla invirtiendo el orden de los mismos. Coloca los endpoints dinámicos en segundo lugar para que no ocasionen problemas.
+
+/* Solución Bloqueo de Endpoints */
+@Get('products/filter')
+endpoint2() {
+    // ...
+}
+@Get('products/:idProduct')
+endpoint1() {
+    // ...
+}
+Este es un inconveniente común que suele suceder en NestJS y es importante que lo conozcas para evitar dolores de cabeza.
+
+import { ..., Query } from '@nestjs/common';
+
+@Controller()
+export class AppController {
+  ...
+
+  @Get('products')
+  getProducts(
+    @Query('limit') limit = 100,
+    @Query('offset') offset = 0,
+    @Query('brand') brand: string,
+  ) {
+    return `products limit=> ${limit} offset=> ${offset} brand=> ${brand}`;
+  }
+
+  @Get('products/filter')
+  getProductFilter() {
+    return `yo soy un filter`;
+  }
+}
+Contribución creada por: Kevin Fiorentino.

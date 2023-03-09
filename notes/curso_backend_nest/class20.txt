@@ -1,0 +1,129 @@
+Validando parámetros con class-validator y mapped-types
+
+Los DTO no solo sirven para tipar y determinar la estructura de los datos de entrada de un endpoint, también pueden contribuir en la validación de los datos y en la entrega de mensajes al front-end en caso de error en los mismos.
+
+Validación de datos con DTO
+Utiliza el comando npm i class-validator class-transformer para instalar dos dependencias que nos ayudarán en la validación de los datos.
+Estas librerías traen un set de decoradores para las propiedades de los DTO y así validar los tipos de datos de entrada.
+
+import { IsNotEmpty, IsString, IsNumber, IsUrl } from 'class-validator';
+
+export class CreateProductDTO {
+  @IsNotEmpty()
+  @IsString()
+  readonly name: string;
+
+  @IsNotEmpty()
+  @IsString()
+  readonly description: string;
+
+  @IsNotEmpty()
+  @IsNumber()
+  readonly price: number;
+
+  @IsNotEmpty()
+  @IsUrl()
+  readonly image: string;
+}
+Estas validaciones contribuyen en la experiencia de desarrollo devolviendo mensajes al front-end sobre qué datos están faltando o cuáles no son correctos. Por ejemplo, si en el Body de la petición enviamos.
+
+{
+  "name": "Nombre producto",
+  "price": 100,
+  "image": "imagen"
+}
+El servidor nos devolverá el siguiente mensaje:
+
+{
+  "statusCode": 400,
+  "message": [
+    "description should not be empty",
+    "description must be a string",
+    "image must be an URL address"
+  ],
+  "error": "Bad Request"
+}
+Indicando que la solicitud espera de forma obligatoria un campo description del tipo string y un campo image con una URL.
+
+Cómo reutilizar código de los DTO
+A medida que tu aplicación crezca, tendrás que crear muchos DTO, para la creación de un producto, edición, filtros, etc. Una buena práctica es la reutilización de las clases DTO que ya tengas implementado para no repetir propiedades.
+
+Instala la dependencia @nestjs/mapped-types que nos ayudará con la reutilización de código de la siguiente manera.
+
+import { IsNotEmpty, IsString, IsNumber, IsUrl } from 'class-validator';
+import { PartialType, OmitType } from '@nestjs/mapped-types';
+
+export class CreateProductDTO {
+
+  @IsNotEmpty()
+  @IsString()
+  readonly name: string;
+
+  @IsNotEmpty()
+  @IsString()
+  readonly description: string;
+
+  @IsNotEmpty()
+  @IsNumber()
+  readonly price: number;
+
+  @IsNotEmpty()
+  @IsUrl()
+  readonly image: string;
+}
+
+export class UpdateProductDto extends PartialType(
+  OmitType(CreateProductDTO, ['name']),
+) {}
+Importa PartialType y OmitType desde @nestjs/mapped-types.
+
+PartialType permite extender una clase de otra y que todos sus campos sean opcionales. Así, el DTO UpdateProductDto no tiene como obligatorio sus campos y es posible editar todos o solo uno.
+
+Por otro lado, OmitType, permite la omisión de campos haciendo que cierta cantidad de ellos no formen parte del DTO en el caso de que dichos campos no deban ser editados.
+
+Instalar npm i class-validator class-transformer @nestjs/mapped-types
+// src/dtos/products.dtos.ts
+import {
+  IsString,
+  IsNumber,
+  IsUrl,
+  IsNotEmpty,
+  IsPositive,
+} from 'class-validator';
+import { PartialType } from '@nestjs/mapped-types';
+
+export class CreateProductDto {
+  @IsString()
+  @IsNotEmpty()
+  readonly name: string;
+
+  @IsString()
+  @IsNotEmpty()
+  readonly description: string;
+
+  @IsNumber()
+  @IsNotEmpty()
+  @IsPositive()
+  readonly price: number;
+
+  @IsNumber()
+  @IsNotEmpty()
+  @IsPositive()
+  readonly stock: number;
+
+  @IsUrl()
+  @IsNotEmpty()
+  readonly image: string;
+}
+
+export class UpdateProductDto extends PartialType(CreateProductDto) {}
+// src/main.ts
+import { ValidationPipe } from '@nestjs/common';
+
+async function bootstrap() {
+  ...
+  app.useGlobalPipes(new ValidationPipe());
+  ...
+}
+bootstrap();
+Contribución creada por: Kevin Fiorentino.

@@ -1,0 +1,77 @@
+IMPLEMENTANDO SERVICIOS EN TU CONTROLADOR
+
+Los servicios son el otro 50% de los controladores. Podría decirse que un controlador siempre hará uso de uno o más servicios para implementar lógica de negocio. Veamos cómo se relacionan.
+
+Inyección de dependencias
+Antes de hablar de la relación entre servicios y controladores, hay que hablar del patrón de diseño que NestJS utiliza internamente.
+
+Imagínate que tienes un Servicio A que utiliza el Servicio B y este a su vez utiliza el Servicio C. Si tuvieses que instanciar el Servicio A, primero deberías instanciar el C para poder instanciar el B y luego sí hacerlo con el A. Se vuelve confuso y poco escalable si en algún momento también tienes que instanciar el Servicio D o E.
+
+La inyección de dependencias llega para solucionar esto, resolver las dependencias de una clase por nosotros. Cuando instanciamos en el constructor el Servicio A, NestJS internamente crea automáticamente la instancia del servicio B y C sin que nosotros nos tengamos que preocupar por estos.
+
+Controladores y servicios
+Los controladores inyectan los servicios desde el constructor. De esta manera, cada endpoint puede hacer uso de la lógica del servicio.
+
+import { Controller, Get } from '@nestjs/common';
+import { AppService } from './app.service';
+
+@Controller()
+export class AppController {
+
+  constructor(
+    private readonly appService: AppService
+  ) {}
+
+  @Get()
+  getHello(): string {
+    return this.appService.getHello();
+  }
+}
+Importa los servicios que necesites, pero hazlo de una manera controlada para mantener la escalabilidad de tu proyecto. Si necesitas importar 20 servicios en un mismo controlador, tal vez tengas que mejorar la estructura del proyecto.
+
+Controllers
+// src/controllers/products.controller.ts
+
+import { ProductsService } from './../services/products.service';
+
+
+@Controller('products')
+export class ProductsController {
+  constructor(private productsService: ProductsService) {}
+
+  @Get()
+  getProducts(...) {
+    return this.productsService.findAll();
+  }
+
+  @Get(':productId')
+  getOne(...) {
+    return this.productsService.findOne(+productId);
+  }
+
+  @Post()
+  create(..) {
+    return this.productsService.create(payload);
+  }
+
+  @Put(':id')
+  update(...) {
+    return this.productsService.update(+id, payload);
+  }
+
+}
+Refactor update
+// src/services/products.service.ts
+ update(id: number, payload: any) {
+    const product = this.findOne(id);
+    if (product) {
+      const index = this.products.findIndex((item) => item.id === id);
+      this.products[index] = {
+        ...product,
+        ...payload,
+      };
+      return this.products[index];
+    }
+    return null;
+  }
+Contribución creada por: Kevin Fiorentino.

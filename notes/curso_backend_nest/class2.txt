@@ -1,0 +1,39 @@
+CREA TU PRIMER PROYECTO CON NEST JS
+
+Cuando se inicia con una nueva tecnología, el primer paso es el ya conocido “Hola Mundo”. Realizar la instalación por primera vez del framework o lenguaje para asegurar que este esté funcionando.
+
+Preparando el Entorno
+Asegúrate de tener instalado en tu ordenador tanto NodeJS como NPM. Se recomienda al menos NodeJS versión 10 u 12.
+
+Consejo: Siempre utilizar versiones pares de NodeJS ya que éstas tienen soporte a largo plazo.
+
+Puedes verificar la versión de Node con el comando node --version y de NPM con el comando npm --version.
+
+Una vez los hayas instalado, es hora de instalar el CLI de NestJS de forma global con el comando npm install -g @nest/cli.
+
+CLI: Command Line Interface o Interfaz de Línea de Comandos por sus siglas en español.
+
+Una vez instalado el CLI, verifica que el proceso es correcto con el comando nest --version.
+
+Instalación
+node --version
+npm i -g @nestjs/cli
+nest --version
+nest --help
+Primer proyecto NestJS
+Para crear tu primer proyecto con este framework basta con utilizar el comando nest new <project-name>. El CLI te realizará una pregunta sobre qué gestor de dependencias quieres utilizar:
+
+<p style=“text-align: center”>
+<img src=“https://cdn.document360.io/da52b302-22aa-4a71-9908-ba18e68ffee7/Images/Documentation/Screenshot from 2022-06-07 16-05-41.png” title=“CLI NestJS: Nuevo proyecto” />
+</p>
+
+Para este ejemplo, escojeremos NPM. Luego de algunos segundos, tu primer proyecto estará listo.
+
+Ahora, utiliza el comando npm run start para levantar el servidor de pruebas básico que trae consigo NestJS y finalmente, ingresa a http://localhost:3000/ para visualizar tu primer “Hola Mundo” con esta tecnología.
+
+Crear y ejecutar el proyecto
+nest new your-name-project
+cd your-name-project
+npm run start
+#  check http://localhost:3000/
+Contribución creada por: Kevin Fiorentino.

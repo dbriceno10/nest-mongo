@@ -1,0 +1,79 @@
+SEPARACIÓN DE RESPONSABILIDADES
+
+NestJS le da mucha importancia a los Principios SOLID en el desarrollo de software para mantener las buenas prácticas de codificación. Una de ellas es la responsabilidad única.
+
+Qué es la responsabilidad única
+La S de SOLID hace referencia a “Single Responsibility” y recomienda que cada pieza de software debe tener una única función. Por ejemplo, un controlador de productos no debería encargarse de categorías o de usuarios. Se debe crear un controlador para cada entidad que la aplicación necesite.
+
+Lo mismo ocurre con los métodos. Un método para la obtención de datos solo debe realizar dicha acción y no estar actualizando o manipulando los datos de otra manera.
+
+Responsabilidades en NestJS
+En NestJS, una buena práctica es crear un directorio llamado controllers donde se agruparán todos los controladores que tu aplicación necesite. Ese ya es un buen paso para mantener el orden en tu proyecto.
+
+Apóyate del CLI de NestJS para autogenerar código rápidamente con el comando nest generate controller <controller-name> o en su forma corta nest g co <controller-name>.
+
+Es una buena forma de comenzar a seguir las buenas prácticas a la hora de escribir código y estructurar una aplicación.
+
+Controllers y responsabilidades
+nest g cor controllers/categories --flat
+src/controllers/categories.controller.ts
+
+import { Controller, Get, Param } from '@nestjs/common';
+
+@Controller('categories') // 👈 Route
+export class CategoriesController {
+
+  @Get(':id/products/:productId')
+  getCategory(
+    @Param('productId') productId: string,
+    @Param('id') id: string
+  ) {
+    return `product ${productId} and ${id}`;
+  }
+}
+nest g co controllers/products --flat
+src/controllers/products.controller.ts
+
+
+import { Controller, Get, Query, Param } from '@nestjs/common';
+
+@Controller('products') // 👈 Route
+export class ProductsController {
+  @Get()
+  getProducts(
+    @Query('limit') limit = 100,
+    @Query('offset') offset = 0,
+    @Query('brand') brand: string,
+  ) {
+    return `products limit=> ${limit} offset=> ${offset} brand=> ${brand}`;
+  }
+
+  @Get('filter')
+  getProductFilter() {
+    return `yo soy un filter`;
+  }
+
+  @Get(':productId')
+  getProduct(@Param('productId') productId: string) {
+    return `product ${productId}`;
+  }
+}
+src/app.module.ts
+
+import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+import { ProductsController } from './controllers/products.controller';
+import { CategoriesController } from './controllers/categories.controller';
+
+@Module({
+  imports: [],
+  controllers: [
+   AppController,
+   ProductsController, // 👈 New controller
+   CategoriesController  // 👈 New controller
+  ],
+  providers: [AppService],
+})
+export class AppModule {}
+Contribución creada por: Kevin Fiorentino.
