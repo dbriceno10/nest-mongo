@@ -15,6 +15,18 @@ export class OrdersService {
       .populate('customer')
       .populate('products')
       .exec();
+    //*Ejemplo de pupulate anidado en caso de ser necesario...
+    /*
+       .find()
+      .populate('products)
+      .populate({
+        path: 'customer',
+        populate: {
+          path: 'skills',
+        },
+      })
+      .exec();
+       */
   }
 
   async findOne(id: string) {

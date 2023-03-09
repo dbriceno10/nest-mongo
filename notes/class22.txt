@@ -113,3 +113,16 @@ export class OrdersService {
       .exec();
   }
 }
+
+
+Ejemplo de pupulate anidado en caso de ser necesario...
+
+       .find()
+      .populate('products)
+      .populate({
+        path: 'customer',
+        populate: {
+          path: 'skills',
+        },
+      })
+      .exec();
