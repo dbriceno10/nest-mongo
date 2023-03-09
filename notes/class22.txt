@@ -1,0 +1,115 @@
+RELACIONES UNO A MUCHOS REFERENCIADAS
+
+Es crucial diseñar bien tu base de datos. Las relaciones uno a muchos pueden crecer indefinidamente y es importante considerar la escalabilidad de tu base de datos.
+
+Relaciones uno a muchos embebidas vs. referenciadas
+A lo igual que las relaciones uno a uno, las relaciones uno a muchos requieren contemplar la posible actualización de todo ese array de documentos. Tener un array de objetos puede no ser escalable y una no muy buena decisión de arquitectura de la base de datos.
+
+Estos problemas se solucionan creando arrays de referencias. Un simple array de string que contendrá un item por cada ID al cual deseas hacer referencia dentro de un objeto principal.
+
+Relaciones referenciadas
+Veamos como puedes crear este tipo de relación donde un documento contendrá un array de IDs que hacen referencia a otros documentos de la base de datos.
+
+Paso 1: preparación del esquema
+Prepara la propiedad correspondiente en tu esquema que contendrá el array de referencias.
+
+// users/order.entity.ts
+import { Document, Types } from 'mongoose';
+import { Product } from '../../products/entities/product.entity';
+
+@Schema()
+export class Order extends Document {
+
+  @Prop({ type: [{ type: Types.ObjectId, ref: Product.name }] })
+  products: Types.Array<Product>;
+}
+Observa que el decorador @Prop() recibe como tipo un Types.ObjectId que a su vez se encuentra encerrado por un array []. También, tienes que tipar la propiedad con Types.Array<> proveniente desde mongoose.
+De esta simple manera, Mongoose sabe que la propiedad products contiene un array de MongoID.
+
+Paso 2: preparar el DTO para la validación de datos
+El DTO solo necesita recibir un array de string[] que es el equivalente para un array de MongoID.
+
+// users/order.dto.ts
+import { IsMongoId, IsNotEmpty, IsDate, IsArray } from 'class-validator';
+import { OmitType, PartialType } from '@nestjs/swagger';
+
+export class CreateOrderDto {
+
+  @IsArray()
+  @IsNotEmpty()
+  readonly products: string[];
+}
+Utiliza el decorador @IsArray() para validar que efectivamente se trate de un array.
+
+Paso 3: GET de documentos referenciados
+Realizar un “Join” o, como se lo conoce en MongoDB, un “Populate” es muy sencillo. Basta con agregar la configuración después del método de búsqueda indicando el nombre de la propiedad a popular.
+
+// users/orders.service.ts
+
+export class OrdersService {
+
+  constructor(@InjectModel(Order.name) private orderModel: Model<Order>) {}
+
+  findAll() {
+    return this.orderModel
+      .find()
+      .populate('products')
+      .exec();
+  }
+}
+Mongoose sabrá a qué colección ir a buscar los documentos al estar referenciado y tipado desde el esquema.
+
+De esta manera, tu base de datos está lista para manipular grandes volúmenes de datos con los mejores tipos de relaciones que existen. Utiliza el tipo de relación más apropiado para cada escenario.
+
+Contribución creada por: Kevin Fiorentino (Platzi Contributor).
+
+Código de ejemplo de relaciones uno a muchos referenciadas
+// src/users/entities/order.entity.ts
+import { Document, Types } from 'mongoose';
+
+import { Customer } from './customer.entity';
+import { Product } from '../../products/entities/product.entity';
+
+@Schema()
+export class Order extends Document {
+   ...
+  @Prop({ type: Types.ObjectId, ref: Customer.name, required: true })
+  customer: Customer | Types.ObjectId; // 👈 relation 1:1 customer
+
+  @Prop({ type: [{ type: Types.ObjectId, ref: Product.name }] })
+  products: Types.Array<Product>; // 👈 relation 1:N
+}
+// src/users/dtos/order.dto.ts
+import { IsMongoId, IsNotEmpty, IsDate, IsArray } from 'class-validator';
+import { OmitType, PartialType } from '@nestjs/swagger';  // 👈 use OmitType
+
+export class CreateOrderDto {
+  @IsNotEmpty()
+  @IsMongoId()
+  readonly customer: string;
+
+  @IsDate()
+  @IsNotEmpty()
+  readonly date: Date;
+
+  @IsArray()
+  @IsNotEmpty()
+  readonly products: string[];
+}
+
+export class UpdateOrderDto extends PartialType(
+  OmitType(CreateOrderDto, ['products']),  // 👈 implement OmitType
+) {}
+// src/users/services/orders.service.ts
+
+export class OrdersService {
+  constructor(@InjectModel(Order.name) private orderModel: Model<Order>) {}
+
+  findAll() {
+    return this.orderModel
+      .find()
+      .populate('customer') // 👈 join customer 1:1
+      .populate('products') // 👈 join products 1:N
+      .exec();
+  }
+}
