@@ -77,3 +77,59 @@ export class CreateCustomerDto {
   @IsNotEmpty()
   readonly skills: any; // 👈 new field
 }
+
+
+
+
+SOLUCION PARA TIPAR EL Array
+
+Cree una clase Skills que contengan los atributos a validar
+export class Skills {
+  @IsNotEmpty()
+  name: string;
+
+  @IsNotEmpty()
+  color: string;
+}
+Luego hice que la variable skills sea del tipo array de Skills y le coloqué el decorador @ValidateNested(), y el decorar @Type especificando el tipo de array:
+ @ValidateNested()
+  @Type(() => Skills)
+  readonly skills: Skills[];
+Obteniendo así el archivo customer.dto.ts
+
+import {
+  IsString,
+  IsNotEmpty,
+  IsPhoneNumber,
+  ValidateNested,
+} from 'class-validator';
+import { PartialType } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+
+export class Skills {
+  @IsNotEmpty()
+  name: string;
+
+  @IsNotEmpty()
+  color: string;
+}
+
+export class CreateCustomerDto {
+  @IsString()
+  @IsNotEmpty()
+  readonly name: string;
+
+  @IsString()
+  @IsNotEmpty()
+  readonly lastName: string;
+
+  @IsPhoneNumber()
+  @IsNotEmpty()
+  readonly phone: string;
+
+  @ValidateNested()
+  @Type(() => Skills)
+  readonly skills: Skills[];
+}
+
+export class UpdateCustomerDto extends PartialType(CreateCustomerDto) {}
