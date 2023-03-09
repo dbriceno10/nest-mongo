@@ -1,0 +1,16 @@
+PRESENTACIÓN DEL PROYECTO: PLATZI STORE
+
+Para aplicar tus conocimientos de NestJS vas a crear una API ecommerce. El proyecto tendrá todas las entidades que tiene un comercio electrónico.
+
+Entidades del proyecto Platzi Store
+Ordenes de compra
+Usuarios
+Categorías
+Productos
+Clientes
+Marcas
+La API la podrás consumir desde Android o cualquier aplicación Frontend como Angular, React, etc
+
+También lograremos tener la documentación de la API REST con Swagger.
+
+Contribución creada con los aportes de: Percy Tejada

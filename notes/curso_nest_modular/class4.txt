@@ -1,0 +1,91 @@
+INTERACCIÓN ENTRE MÓDULOS
+
+Dentro de un módulo, puedes tener la necesidad de utilizar un servicio que pertenece a otro módulo. Importar estos servicios en otros módulos requiere de un paso adicional.
+
+Importaciones de servicios compartidos
+Si tienes un Módulo A que posee un Servicio A y un segundo Módulo B requiere hacer uso de este, debes exportar el servicio para que otro módulo pueda utilizarlo.
+
+// Módulo A
+import { ServiceA } from './service-A.service';
+
+@Module({
+  providers: [ServiceA],
+  exports: [ServiceA]
+})
+export class ModuleA {}
+// Módulo B
+import { ServiceA } from './module-A/service-A.service';
+
+@Module({
+  providers: [ServiceA]
+})
+export class ModuleB {}
+Debes indicar en la propiedad exports del decorador @Module() que un módulo es exportable para que otro módulo pueda importarlo en sus providers.
+
+De esta manera, evitas errores de compilación de tu aplicación que ocurren cuando importas servicios de otros módulos que no están siendo exportados correctamente.
+
+Ejemplo de interacción entre módulos
+A continuación, podrás ver el código que necesitas para hacer que los módulos interactúen entre sí.
+
+// src/users/entities/order.entity.ts
+import { User } from './user.entity';
+import { Product } from './../../products/entities/product.entity';
+
+export class Order { //  // 👈 new entity
+  date: Date;
+  user: User;
+  products: Product[];
+}
+// src/users/controllers/users.controller.ts
+  @Get(':id/orders') //  👈 new endpoint
+  getOrders(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.getOrderByUser(id);
+  }
+// src/users/services/users.service.ts
+
+...
+import { Order } from '../entities/order.entity';
+
+import { ProductsService } from './../../products/services/products.service';
+
+
+@Injectable()
+export class UsersService {
+  constructor(private productsService: ProductsService) {}
+  ...
+
+  getOrderByUser(id: number): Order { // 👈 new method
+    const user = this.findOne(id);
+    return {
+      date: new Date(),
+      user,
+      products: this.productsService.findAll(),
+    };
+  }
+}
+// src/products/products.module.ts
+
+import { Module } from '@nestjs/common';
+
+....
+
+@Module({
+  controllers: [ProductsController, CategoriesController, BrandsController],
+  providers: [ProductsService, BrandsService, CategoriesService],
+  exports: [ProductsService], // 👈 Export ProductsService
+})
+export class ProductsModule {}
+// src/users/users.module.ts
+import { Module } from '@nestjs/common';
+
+...
+
+import { ProductsModule } from '../products/products.module';
+
+@Module({
+  imports: [ProductsModule], // 👈 Import ProductsModule
+  controllers: [CustomerController, UsersController],
+  providers: [CustomersService, UsersService],
+})
+export class UsersModule {}
+Contribución creada por: Kevin Fiorentino.
