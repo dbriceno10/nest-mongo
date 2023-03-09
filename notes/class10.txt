@@ -1,3 +1,5 @@
+¿Qué es Mongoose? Instalación y configuración
+
 Utilizar el driver oficial de MongoDB para NestJS es una buena manera de trabajar y relacionar estos dos mundos. Pero existe una forma mucho más profesional y amigable que te ayudará a trabajar más rápido y cometer menos errores.
 
 ¿Qué es Mongoose como ODM?

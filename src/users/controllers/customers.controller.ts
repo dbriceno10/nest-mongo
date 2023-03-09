@@ -10,6 +10,7 @@ import {
 
 import { CustomersService } from '../services/customers.service';
 import { CreateCustomerDto, UpdateCustomerDto } from '../dtos/customer.dto';
+import { MongoIdPipe } from 'src/common/mongo-id.pipe';
 
 @Controller('customers')
 export class CustomerController {
@@ -21,7 +22,7 @@ export class CustomerController {
   }
 
   @Get(':id')
-  get(@Param('id') id: string) {
+  get(@Param('id', MongoIdPipe) id: string) {
     return this.customersService.findOne(id);
   }
 
@@ -31,12 +32,15 @@ export class CustomerController {
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() payload: UpdateCustomerDto) {
+  update(
+    @Param('id', MongoIdPipe) id: string,
+    @Body() payload: UpdateCustomerDto,
+  ) {
     return this.customersService.update(id, payload);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  remove(@Param('id', MongoIdPipe) id: string) {
     return this.customersService.remove(id);
   }
 }

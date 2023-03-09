@@ -1,3 +1,5 @@
+Implementando Mongoose en Módulos
+
 Además de realizar la conexión a la base de datos, Mongoose permite el mapeo de información para estandarizar su estructura en cada colección de MongoDB.
 
 Creando entidades con Mongoose

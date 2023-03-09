@@ -1,0 +1,134 @@
+MANIPULACIÓN DE ARRAYS EN MONGODB
+
+Los esquemas que contienen propiedades tipo Array deben manipularse de una forma especial. Haciendo los típicos push/pullpara agregar/quitar elementos, pero considerando la asincronía y que estos arrays se guardan en una base de datos.
+
+Agregar y quitar elementos en un array
+Veamos cómo es posible agregar/quitar elementos de un array que forma parte de un documento en MongoDB:
+
+// users/services/orders.service.ts
+export class OrdersService {
+
+  async addProducts(id: string, productsIds: string[]) {
+    const order = await this.orderModel.findById(id);
+    productsIds.forEach((pId) => order.products.push(pId));
+    return order.save();
+  }
+
+  async removeProduct(id: string, productId: string) {
+    const order = await this.orderModel.findById(id);
+    order.products.pull(productId);
+    return order.save();
+  }
+}
+La función findById() devolverá la referencia del documento encontrado a través de su ID. Gracias a esto, puedes ejecutar otras acciones sobre ese mismo documento para agregar elementos a un array con push() o removerlos con pull(). Finalmente, la función save() actualizará en la base de datos el documento completo.
+
+Del lado del controlador, haz una simple llamada a estas funciones que se encargarán de la manipulación de, en este caso, el array de productos.
+
+// users/orders.controller.ts
+import { CreateOrderDto, UpdateOrderDto, AddProductsToOrderDto } from '../dtos/order.dto';
+
+@Controller('orders')
+export class OrdersController {
+
+  @Put(':id/products')
+  addProducts(@Param('id') id: string, @Body() payload: AddProductsToOrderDto) {
+    return this.ordersService.addProducts(id, payload.productsIds);
+  }
+
+  @Delete(':id/product/:productId')
+  removeProduct(@Param('id') id: string, @Param('productId') productId: string) {
+    return this.ordersService.removeProduct(id, productId);
+  }
+}
+Ten en cuenta que este tipo de operaciones son asíncronas, dependiendo de cómo armes tu controlador y el servicio encargado de realizar las modificaciones en la base de datos.
+
+Operadores especiales de MongoDB
+Si trabajas directamente con MongoDB, tienes que conocer los operadores que implementa para la manipulación de arrays. Estos son:
+
+$addToSet para agregar items en un array
+$pull para eliminar items en un array
+$pullAll para eliminar todos los items en un array
+De esta manera, tu mismo puedes crear las consultas a tu base de datos necesarias para manipular un array dentro de un documento, sin necesidad de que herramientas como Mongoose implementen una capa de abstracción que facilite la tarea.
+
+Contribución creada por: Kevin Fiorentino (Platzi Contributor).
+
+Código de ejemplo para manipulación de arrays
+// src/users/services/orders.service.ts
+
+export class OrdersService {
+  ...
+  async removeProduct(id: string, productId: string) { // 👈
+    const order = await this.orderModel.findById(id);
+    order.products.pull(productId);
+    return order.save();
+  }
+
+  async addProducts(id: string, productsIds: string[]) {  // 👈
+    const order = await this.orderModel.findById(id);
+    productsIds.forEach((pId) => order.products.push(pId));
+    return order.save();
+  }
+}
+// src/users/dtos/order.dto.ts
+
+...
+
+export class AddProductsToOrderDto {
+  @IsArray()
+  @IsNotEmpty()
+  readonly productsIds: string[];
+}
+// src/users/controllers/orders.controller.ts
+
+import {
+  CreateOrderDto,
+  UpdateOrderDto,
+  AddProductsToOrderDto,
+} from '../dtos/order.dto';
+
+@Controller('orders')
+export class OrdersController {
+
+  @Put(':id/products') // 👈 add product
+  addProducts(
+    @Param('id') id: string,
+    @Body() payload: AddProductsToOrderDto,
+  ) {
+    return this.ordersService.addProducts(id, payload.productsIds);
+  }
+
+  @Delete(':id/product/:productId') // 👈 delete product
+  removeProduct(
+    @Param('id') id: string,
+    @Param('productId') productId: string,
+  ) {
+    return this.ordersService.removeProduct(id, productId);
+  }
+}
+
+
+Para evitar duplicados en orders.productsIds podemos usar el operador de mongo $addToSet. Este operador agrega los elementos al array a menos que el valor ya se encuentre en el mismo.
+
+// Products
+  async addProducts(idOrder: string, productsIds: string[]){
+    const order = await this.OrderModel.findByIdAndUpdate(
+      idOrder,
+      { $addToSet: { productos: productsIds }}
+    )
+
+    if(!order){
+      throw new NotFoundException(`order ${idOrder} not found`);
+    }
+
+    return await order.save();
+  }
+
+
+Para el metodo push tambien se puede usar el spread operator de la siguiente manera
+
+async addProducts(id:string,productIds:string[]){
+    const order = await this.orderModel.findById(id)
+    order.products.push(...productIds)
+    return order.save()
+  }
+}

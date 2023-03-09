@@ -1,166 +1,76 @@
-Conectarse a una base de datos implica la posibilidad de manipular en su totalidad los datos desde su creación, modificación y eliminación, además de la lectura de los mismos.
+Pipe para mongoid
 
-Crear documento
-La creación de un registro es bastante sencilla, basta con pasarle los datos necesarios para la creación de un nuevo documento.
+En ocasiones es necesario validar nuestros propios datos de entrada. Cuando esos datos sean utilizados para realizar consultas a una base de datos, es recomendable estar prevenido por posibles ataques y validarlos manualmente.
 
-// modules/products/products.service.ts
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { CreateProductDto } from './product.dto';
+Cómo validar ID de MongoDB
+Los documentos que se crean en una base de datos MongoDB, por defecto, utilizan una propiedad llamada _id, o también llamado ObjectID, que representa el ID principal de cada documento. El mismo tiene un formato particular de 12 o 24 caracteres que podemos validar para asegurar que, el dato que el front-end nos envía, se trata efectivamente de un Mongo ID.
 
-@Injectable()
-export class ProductsService {
+Paso 1: creamos el Pipe de NestJS
+Crearemos un custom pipe con el comando nest g pi mongoId para validar el Mongo ID. El mismo contendrá la lógica del validador.
 
-  constructor(@InjectModel(Product.name) private productModel: Model<Product>) {}
-
-  create(data: CreateProductDto) {
-    const newProduct = new this.productModel(data);
-    return newProduct.save();
-  }
-}
-Recuerda que puedes apoyarte en los DTO de NestJS para el tipado de datos. El productModel espera que le envíes un objeto que contenga las mismas propiedades que el esquema que hayas creado para la colección.
-
-Actualizar documento
-La actualización de un registro conlleva dos partes, comprobar que el mismo exista para su posterior actualización. Afortunadamente, Mongoose puede realizar las dos acciones en una.
-
-// modules/products/products.service.ts
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { UpdateProductDto } from './product.dto';
+import { ArgumentMetadata, Injectable, PipeTransform, BadRequestException } from '@nestjs/common';
+import { isMongoId } from 'class-validator';
 
 @Injectable()
-export class ProductsService {
+export class MongoIdPipe implements PipeTransform {
 
-  constructor(@InjectModel(Product.name) private productModel: Model<Product>) {}
-
-  update(id: string, changes: UpdateProductDto) {
-    return this.productModel
-      .findByIdAndUpdate(id, { $set: changes }, { new: true })
-      .exec();
+  transform(value: string, metadata: ArgumentMetadata) {
+    if (!isMongoId(value)) {
+      throw new BadRequestException(`${value} is not a mongoId`);
+    }
+    return value;
   }
+
 }
-Para la actualización de un documento, la función findByIdAndUpdate primero busca el registro por ID y si lo encuentra, lo actualiza. Aquí ya es necesario un poco de conocimiento en el lenguaje de consulta de MongoDB para utilizar el $set que actualizará los campos que se le indique.
+Afortunadamente, la dependencia class-validator nos ayudará a validar el formato del string de entrada para verificar si posee la forma de un Mongo ID.
 
-Eliminar documento
-La eliminación de un registro es similar a la actualización. El documento debe existir para su posterior eliminación. La función findByIdAndDelete lo hará por nosotros.
+Paso 2: implementar el validador
+Implementar un Pipe en NestJS es muy sencillo, basta con pasarlo como parámetro al decorador para que el mismo se ocupe de validar el dato de entrada.
 
-// modules/products/products.service.ts
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { MongoIdPipe } from './mongo-id.pipe';
 
-@Injectable()
-export class ProductsService {
-
-  constructor(@InjectModel(Product.name) private productModel: Model<Product>) {}
-
-  remove(id: string) {
-    return this.productModel.findByIdAndDelete(id);
-  }
-}
-Endpoints para crear, actualizar y eliminar
-Ya solo queda construir los endpoints necesarios para realizar cada operación en la base de datos.
-
-@Controller('products')
 export class ProductsController {
 
-  @Post()
-  create(@Body() payload: CreateProductDto) {
-    return this.productsService.create(payload);
-  }
-
-  @Put(':id')
-  update(@Param('id') id: string, @Body() payload: UpdateProductDto) {
-    return this.productsService.update(id, payload);
-  }
-
-  @Delete(':id')
-  delete(@Param('id') id: string) {
-    return this.productsService.remove(id);
+  @Get(':productId')
+  getOne(@Param('productId', MongoIdPipe) productId: string) {
+    return this.productsService.findOne(productId);
   }
 }
-De esta manera, ya puedes realizar operaciones CRUD y manipular por completo los datos de tu colección de MongoDB desde una API Rest.
+Recuerda prestar atención tanto al tipado de datos para evitar errores como la validación de los mismos para mejorar la seguridad de tu aplicación. Las aplicaciones profesionales deben desarrollarse con las mejores prácticas posibles.
 
-Contribución creada por: Kevin Fiorentino (Platzi Contributor).
+Contribución creada por: Kevin Fiorentino.
 
-Código de ejemplo crear, actualizar y borrar productos
-// src/products/services/products.service.ts
-...
+Código de ejemplo de pipe para mongoid
+nest g pi common/mongoId
+// src/common/mongo-id.pipe.ts
+
+import {
+  ArgumentMetadata,
+  Injectable,
+  PipeTransform,
+  BadRequestException,
+} from '@nestjs/common';
+import { isMongoId } from 'class-validator';
 
 @Injectable()
-export class ProductsService {
-  ...
+export class MongoIdPipe implements PipeTransform { // 👈 new pipe
 
-  create(data: CreateProductDto) {  // 👈
-    const newProduct = new this.productModel(data);
-    return newProduct.save();
-  }
-
-  update(id: string, changes: UpdateProductDto) {  // 👈
-    const product = this.productModel
-      .findByIdAndUpdate(id, { $set: changes }, { new: true })
-      .exec();
-    if (!product) {
-      throw new NotFoundException(`Product #${id} not found`);
+  transform(value: string, metadata: ArgumentMetadata) {
+    if (!isMongoId(value)) {
+      throw new BadRequestException(`${value} is not a mongoId`);
     }
-    return product;
+    return value;
   }
 
-  remove(id: string) {  // 👈
-    return this.productModel.findByIdAndDelete(id);
-  }
 }
 // src/products/controllers/products.controller.ts
+import { MongoIdPipe } from './../../common/mongo-id.pipe'; // 👈 import
 
-@Controller('products')
+...
 export class ProductsController {
-   ...
 
-  @Post()
-  create(@Body() payload: CreateProductDto) {
-    return this.productsService.create(payload);  // 👈
-  }
-
-  @Put(':id')
-  update(@Param('id') id: string, @Body() payload: UpdateProductDto) {
-    return this.productsService.update(id, payload);  // 👈
-  }
-
-  @Delete(':id')
-  delete(@Param('id') id: string) {
-    return this.productsService.remove(id);  // 👈
+  @Get(':productId')
+  getOne(@Param('productId', MongoIdPipe) productId: string) {  // 👈 use MongoIdPipe
+    return this.productsService.findOne(productId);
   }
 }
-Revisa que uses el ApiProperty en todos los attrs del Dto para que se haga la actualización correctamente.
-
-// src/products/dtos/products.dtos.ts
-import { ApiProperty, PartialType } from '@nestjs/swagger';
-
-export class CreateProductDto {
-  @IsString()
-  @IsNotEmpty()
-  @ApiProperty({ description: `product's name` }) // 👈 use ApiProperty
-  readonly name: string;
-
-  @IsString()
-  @IsNotEmpty()
-  @ApiProperty() // 👈 use ApiProperty
-  readonly description: string;
-
-  @IsNumber()
-  @IsNotEmpty()
-  @IsPositive()
-  @ApiProperty() // 👈 use ApiProperty
-  readonly price: number;
-
-  @IsNumber()
-  @IsNotEmpty()
-  @ApiProperty() // 👈 use ApiProperty
-  readonly stock: number;
-
-  @IsUrl()
-  @IsNotEmpty()
-  @ApiProperty() // 👈 use ApiProperty
-  readonly image: string;
-}
-
-export class UpdateProductDto extends PartialType(CreateProductDto) {}

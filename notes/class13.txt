@@ -1,3 +1,5 @@
+Create, update y delete
+
 Conectarse a una base de datos implica la posibilidad de manipular en su totalidad los datos desde su creación, modificación y eliminación, además de la lectura de los mismos.
 
 Crear documento
